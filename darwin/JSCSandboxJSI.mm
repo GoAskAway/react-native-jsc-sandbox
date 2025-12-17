@@ -187,7 +187,8 @@ void JSCSandboxContext::setGlobal(jsi::Runtime& rt, const std::string& name, con
         JSContext* ctx = (__bridge JSContext*)jsContext_;
         NSString* nsName = [NSString stringWithUTF8String:name.c_str()];
 
-        // Handle functions specially - create a proxy that calls back to host
+        // Handle functions specially - create a wrapper function in JS that calls our block
+        // This ensures typeof returns "function" instead of "object"
         if (value.isObject() && value.asObject(rt).isFunction(rt)) {
             // Store the function
             std::string callbackId = "cb_" + std::to_string(++callbackCounter_);
@@ -199,12 +200,11 @@ void JSCSandboxContext::setGlobal(jsi::Runtime& rt, const std::string& name, con
             std::string cbId = callbackId;
             auto* self = this;
 
-            // Create a proxy function in JSContext that calls back to host
-            JSValue* proxyFn = [JSValue valueWithObject:^id(void) {
-                // Get arguments from JSContext
+            // First, create a block-based function with internal name
+            NSString* internalName = [NSString stringWithFormat:@"__jsc_cb_%s", cbId.c_str()];
+            JSValue* blockFn = [JSValue valueWithObject:^id(void) {
                 NSArray* jsArgs = [JSContext currentArguments];
 
-                // Convert to jsi::Value array and call the stored function
                 @autoreleasepool {
                     auto it = self->callbacks_.find(cbId);
                     if (it == self->callbacks_.end()) {
@@ -213,13 +213,11 @@ void JSCSandboxContext::setGlobal(jsi::Runtime& rt, const std::string& name, con
                     }
 
                     try {
-                        // Convert JSValue args to jsi::Value
                         std::vector<jsi::Value> jsiArgs;
                         for (JSValue* arg in jsArgs) {
                             jsiArgs.push_back(self->jsValueToJSI(*hostRt, (__bridge void*)arg));
                         }
 
-                        // Call the host function
                         jsi::Value result;
                         if (jsiArgs.empty()) {
                             result = it->second->call(*hostRt);
@@ -227,7 +225,6 @@ void JSCSandboxContext::setGlobal(jsi::Runtime& rt, const std::string& name, con
                             result = it->second->call(*hostRt, (const jsi::Value*)jsiArgs.data(), jsiArgs.size());
                         }
 
-                        // Convert result back to JSValue
                         void* jsResult = self->jsiToJSValue(*hostRt, result);
                         return (__bridge id)jsResult;
                     } catch (const std::exception& e) {
@@ -237,7 +234,18 @@ void JSCSandboxContext::setGlobal(jsi::Runtime& rt, const std::string& name, con
                 }
             } inContext:ctx];
 
-            ctx[nsName] = proxyFn;
+            // Store the block function with internal name
+            ctx[internalName] = blockFn;
+
+            // Create a proper function wrapper using eval
+            // This ensures typeof returns "function"
+            NSString* wrapperScript = [NSString stringWithFormat:
+                @"(function() { var fn = function() { return %@.apply(this, arguments); }; return fn; })()",
+                internalName];
+            JSValue* wrapperFn = [ctx evaluateScript:wrapperScript];
+
+            // Set the wrapper as the global with the requested name
+            ctx[nsName] = wrapperFn;
         } else {
             // Convert and set non-function values
             void* jsValue = jsiToJSValue(rt, value);
