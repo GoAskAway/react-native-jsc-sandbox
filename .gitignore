@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+
+# Build output (if any)
+build/
+lib/
+
+# IDE
+.idea/
+.vscode/
+*.xcworkspace
+*.xcuserdata
+
+# macOS
+.DS_Store
+*.swp
+
+# Bun
+bun.lockb
+
+# CocoaPods
+Pods/
+Podfile.lock
+
+# ESLint
+.eslintcache
+
+# Coverage
+coverage/
+
+# Logs
+*.log
+
+# Environment
+.env
+.env.local

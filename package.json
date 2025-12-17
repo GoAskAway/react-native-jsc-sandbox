@@ -1,0 +1,61 @@
+{
+  "name": "react-native-jsc-sandbox",
+  "version": "0.1.0",
+  "description": "JavaScriptCore sandbox for React Native - isolated JS execution on all Apple platforms",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "react-native": "src/index.ts",
+  "files": [
+    "src",
+    "darwin",
+    "examples",
+    "react-native-jsc-sandbox.podspec",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GoAskAway/react-native-jsc-sandbox.git"
+  },
+  "bugs": {
+    "url": "https://github.com/GoAskAway/react-native-jsc-sandbox/issues"
+  },
+  "homepage": "https://github.com/GoAskAway/react-native-jsc-sandbox#readme",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "biome lint .",
+    "lint:fix": "biome lint --write .",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "test": "bun test",
+    "test:watch": "bun test --watch",
+    "check": "biome check --write . && bun run typecheck && bun test",
+    "check:ci": "biome ci . && bun run typecheck && bun test"
+  },
+  "keywords": [
+    "react-native",
+    "javascriptcore",
+    "jsc",
+    "jsi",
+    "sandbox",
+    "ios",
+    "macos",
+    "tvos",
+    "apple",
+    "isolated",
+    "execution"
+  ],
+  "author": "GoAskAway",
+  "license": "Apache-2.0",
+  "peerDependencies": {
+    "react-native": ">=0.73.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.0.0",
+    "@types/bun": "latest",
+    "@types/react": "^18.0.0",
+    "@types/react-native": "^0.73.0",
+    "typescript": "^5.3.0"
+  }
+}
